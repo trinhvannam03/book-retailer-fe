@@ -4,7 +4,6 @@ import './styles/meta.scss'
 import PageHome from "./pages/PageHome";
 import PageProduct from "./pages/PageProduct";
 import PageAdmin from "./pages/admin/PageAdmin";
-import {ScrollToTop} from "./components/axiosClient";
 import PageAuth from "./pages/PageAuth";
 import PageCart from "./pages/PageCart";
 import {useState} from "react";
@@ -21,7 +20,6 @@ import SubPageWishLish from "./pages/user/SubPageWishList";
 import SubPageChangePassword from "./pages/user/SubPageChangePassword";
 import SubPageSessions from "./pages/user/SubPageSessions";
 import PageSearchResult from "./pages/PageSearchResult";
-import Cv from "./pages/checkout/Cv";
 // Incorrect for browser-based apps:
 
 
