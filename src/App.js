@@ -36,8 +36,6 @@ function App() {
                 <CartProvider>
                     <Router>
                         <Routes>
-                            <Route path="/cv" element={<Cv/>}/>
-
                             <Route path="/admin/extract-data" element={<PageExtractData/>}/>
                             <Route path="/admin/browse-all" element={<PageAdmin/>}/>
                             <Route path="/checkout" element={<PageCheckout/>}/>

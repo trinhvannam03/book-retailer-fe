@@ -38,7 +38,7 @@ const DropdownContent_Address = ({setAddress: superSetAddress, setShipping}) => 
     const [cities, setCities] = useState([])
 
     const fetchCountries = useCallback(async () => {
-        const response = await axiosClient.get("/api/address/countries")
+        const response = await axiosClient.get("/api/user/address/countries")
         if (response.status === 200) {
             setCountries(response.data)
         }
@@ -46,7 +46,7 @@ const DropdownContent_Address = ({setAddress: superSetAddress, setShipping}) => 
     const fetchCities = useCallback(async () => {
         if (address && address.state?.id) {
             try {
-                const response = await axiosClient.get(`/api/address/cities/${address.state.id}`)
+                const response = await axiosClient.get(`/api/user/address/cities/${address.state.id}`)
                 if (response.status === 200) {
                     setCities(response.data)
                 }
@@ -57,7 +57,7 @@ const DropdownContent_Address = ({setAddress: superSetAddress, setShipping}) => 
     const fetchStates = useCallback(async () => {
         if (address && address.country?.id) {
             try {
-                const response = await axiosClient.get(`api/address/states/${address.country.id}`)
+                const response = await axiosClient.get(`api/user/address/states/${address.country.id}`)
                 if (response.status === 200) {
                     setStates(response.data)
                 }
