@@ -1,0 +1,55 @@
+.page-content {
+  &.page-admin {
+    .browse-all {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      flex-direction: column;
+      width: 100%;
+      padding: 0 20px;
+      border: 1px solid black;
+
+      .browse {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        text-align: left;
+        font-weight: bolder;
+        font-size: 20px;
+      }
+
+      .product {
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid black;
+        width: 100%;
+
+        input {
+          transform: scale(1.5);
+          margin-right: 20px;
+        }
+
+
+        .name {
+          flex-grow: 1;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+        }
+
+        .view {
+          width: 50px;
+          height: 100%;
+          text-decoration: underline;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      }
+    }
+  }
+}
