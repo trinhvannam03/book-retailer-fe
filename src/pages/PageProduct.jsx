@@ -1,17 +1,19 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {WishlistSvg} from "../components/Navbar";
-import {Link, useParams} from "react-router-dom";
-import {axiosClient, ScrollToTop} from "../components/axiosClient";
+import {Link, useNavigate, useParams} from "react-router-dom";
+import {axiosClient} from "../components/axiosClient";
 import {Result} from "antd";
 import FeaturedSection from "../components/FeaturedSection";
 import PageWrapper from "../components/PageWrapper";
 import {useCart} from "../context/CartContext";
+import {IoLocationOutline} from "react-icons/io5";
+import RippleButton from "../components/RippleButton";
 
 
 const PageProduct = () => {
     const [error, setError] = useState(false)
+    const {addToCart, getCheckoutData, setCheckedItems} = useCart();
     const [quantity, setQuantity] = useState(1);
-    const {id} = useParams();
     const increase = () => {
         setQuantity(prev => prev + 1)
     }
@@ -20,8 +22,27 @@ const PageProduct = () => {
             return prev === 1 ? prev : prev - 1
         })
     }
+    const navigate = useNavigate()
+    const {id} = useParams();
     const [book, setBook] = useState(undefined);
-    const getBook = useCallback(async () => {
+    const [stores, setStores] = useState([])
+    const fetchStores = useCallback(async () => {
+        //this function actually fetches the stock records associated with this book in all available stores
+        try {
+            const response = await axiosClient.get(`api/books/${book?.bookId}/stores`)
+            if (response.status === 200) {
+                setStores(response.data)
+            }
+        } catch (error) {
+
+        }
+    }, [book])
+    useEffect(() => {
+        if (book) {
+            fetchStores().then()
+        }
+    }, [book, fetchStores]);
+    const fetchBook = useCallback(async () => {
         try {
             const response = await axiosClient.get(`/api/books/${id}`)
             if (response.status === 200) {
@@ -33,10 +54,11 @@ const PageProduct = () => {
             }
         }
     }, [id]);
-    const {addToCart} = useCart();
     useEffect(() => {
-        getBook().then();
-    }, [getBook, id]);
+        fetchBook().then();
+    }, [fetchBook, id]);
+
+
     return (
         <PageWrapper>
             {
@@ -52,7 +74,7 @@ const PageProduct = () => {
                                         <h3 className={"title"}>
                                             {book && book.title}
                                             &nbsp;<span>
-                                                <span>By&nbsp;</span>{book?.authors?.map(author => author.fullName).join(', ')}
+                                                <span>By&nbsp;</span>{book?.authors?.map(author => author.authorName).join(', ')}
                                              </span>
                                         </h3>
 
@@ -61,49 +83,79 @@ const PageProduct = () => {
                                         </h5>
                                         <div className={"price"}>
                                             <div className={"display-price"}>
-                                                ${book && book.price}
+                                                ${book && book.price.toFixed(2)}
                                             </div>
                                         </div>
 
 
                                         <div className={"quantity-and-stock"}>
                                             <div className={"quantity"}>
-                                                <div onClick={() => {
+                                                <RippleButton onClick={() => {
                                                     decrease();
                                                 }}>-
-                                                </div>
+                                                </RippleButton>
                                                 <div>{quantity}</div>
-                                                <div onClick={() => {
+                                                <RippleButton onClick={() => {
                                                     increase()
                                                 }}>+
-                                                </div>
+                                                </RippleButton>
                                             </div>
                                             <div className={"stock"}>
                                                 <p>{book ? (Number(book.stock) > 100 ? "100+ available" : `${book.stock} available`) : null}&nbsp;</p>
                                             </div>
                                         </div>
                                         <div className={'buttons'}>
-                                            <button onClick={() => {
+                                            <RippleButton onClick={() => {
                                                 addToCart({
-                                                    book_id: book.id,
+                                                    book_id: book.bookId,
                                                     quantity: 1,
-                                                    bookCover: book.bookCover,
                                                     title: book.title
                                                 });
                                             }}>
                                                 Add To Cart
-                                            </button>
-                                            <button>
+                                            </RippleButton>
+                                            <RippleButton>
                                                 Buy Now
-                                            </button>
+                                            </RippleButton>
                                             <div className={"wish"}>
                                                 <WishlistSvg/>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className={"stores"}>
-
-                                        <div className={"stores-header"}></div>
+                                    <div className={"stores-section"}>
+                                        <h3 className={"stores-header"}>
+                                            Find an available store
+                                        </h3>
+                                        <div className={"search-stores"}>
+                                            <input/>
+                                            <button>Find</button>
+                                            <div className={"nearest"}>
+                                                Nearest
+                                            </div>
+                                        </div>
+                                        <div className={"stores"}>
+                                            {stores?.map(store =>
+                                                <div className={"store"}>
+                                                    <div className={"store-details"}>
+                                                        <p>
+                                                            {store?.location.locationName}
+                                                        </p>
+                                                        <p>
+                                                            Opening: from 9:00 A.M to 9:00 P.M
+                                                        </p>
+                                                        <p>
+                                                            {store?.quantity > 0 ? `${store?.quantity} available` : "Out of stock"}
+                                                        </p>
+                                                        <p>
+                                                            <IoLocationOutline/>&nbsp;{store?.location.city.name}
+                                                        </p>
+                                                    </div>
+                                                    <div className={"store-buttons"}>
+                                                        <RippleButton>Reserve</RippleButton>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className={"additional-details about"}>
@@ -157,8 +209,11 @@ const PageProduct = () => {
                                          dangerouslySetInnerHTML={{__html: book?.authors?.map(author => author.authorDesc).join("") || "<em>Details about the author are currently missing.</em>"}}/>
                                 </div>
                             </div>
-                            <FeaturedSection header={"From This Author"}/>
-                            <FeaturedSection header={"Similar Items"}/>
+                            <FeaturedSection
+                                fetchUrl={`api/books/similar-author?author=${book?.authors[0]?.authorName}`}
+                                header={"From This Author"}/>
+                            <FeaturedSection fetchUrl={`api/books/similar?id=${book?.bookId}`}
+                                             header={"Similar Items"}/>
                         </div>
                     </>
                     :

@@ -20,10 +20,10 @@ export const CartProvider = ({children}) => {
             }
         }
     }, [coupon]);
-    const [timeOut, setTimeOut] = useState(500);
     useEffect(() => {
         calculateDiscount().then()
     }, [calculateDiscount]);
+
     const {isAuthenticated} = useAuthentication();
     const checkItem = useCallback((id, checked) => {
         setCheckedItems(prev => {
@@ -39,11 +39,12 @@ export const CartProvider = ({children}) => {
         try {
             const response = await fetchWithRetry("api/cart/", "POST", payload)
             if (response.status === 200) {
-                setRecords(() => {
-                    const newMap = new Map();
-                    response.data.forEach(record => newMap.set(record?.id, record))
+                setRecords((prev) => {
+                    const newMap = new Map(prev);
+                    newMap.set(response.data.id, response.data);
                     return newMap;
                 })
+                return response.data
             }
         } catch (error) {
             if (error.response?.status === 403 || error.response.status === 401) {
@@ -64,7 +65,7 @@ export const CartProvider = ({children}) => {
         } catch (error) {
             setRecords(prev => {
                 const newMap = new Map(prev);
-                newMap.delete(payload.cart_record_id);
+                newMap.delete(payload.id);
                 return newMap;
             })
         }
@@ -74,29 +75,25 @@ export const CartProvider = ({children}) => {
         const amount = (checkedItems.reduce((sum, item) => Number(sum) + Number(Number(records.get(item)?.book.price) * Number(records.get(item)?.quantity)), 0) * (discount / 100)).toFixed(2)
         const total = (checkedItems.reduce((sum, item) => Number(sum) + Number(Number(records.get(item)?.book.price) * Number(records.get(item)?.quantity)), 0).toFixed(2) - amount).toFixed(2)
         return {
-            subtotal: subtotal,
-            discount: amount,
-            total: total
+            subtotal: subtotal, discount: amount, total: total
         }
     }, [checkedItems, discount, records]);
+
     useEffect(() => {
         setCheckedItems(prev => {
             return prev.filter(id => records?.get(id)?.quantity <= records.get(id)?.book.stock)
         })
     }, [records]);
-    const renderNotification = () => {
 
-    }
-    const getCheckoutData = useCallback(() => {
+    const getCheckoutData = useCallback((type) => {
         const items = checkedItems.map(c => {
             const record = records.get(c);
             return {
-                cart_record_id: record?.id, quantity: record?.quantity
+                id: record?.id, quantity: type === "PICKUP" ? 1 : record?.quantity
             }
         })
         return encodeURIComponent(btoa(JSON.stringify({
-            items: items,
-            coupon: coupon
+            items: items, coupon: coupon, type: type
         })))
     }, [checkedItems, coupon, records]);
     const deleteFromCart = useCallback(async (payload) => {
@@ -135,30 +132,28 @@ export const CartProvider = ({children}) => {
             fetchCart().then()
         }
     }, [fetchCart, isAuthenticated]);
-    return (
-        <CartContext.Provider
-            value={{
-                setCoupon,
-                getPreliminaryCalculation,
-                getCheckoutData,
-                updateCart,
-                fetchCart,
-                checkItem,
-                addToCart,
-                records,
-                deleteFromCart,
-                checkedItems
-            }}>
-            <CartNotification queue={queue}/>
-            {children}
-        </CartContext.Provider>);
+    return (<CartContext.Provider
+        value={{
+            setCoupon,
+            getPreliminaryCalculation,
+            getCheckoutData,
+            setCheckedItems,
+            updateCart,
+            fetchCart,
+            checkItem,
+            addToCart,
+            records,
+            deleteFromCart,
+            checkedItems
+        }}>
+        <CartNotification queue={queue}/>
+        {children}
+    </CartContext.Provider>);
 };
 const CartNotification = ({queue}) => {
-    return (
-        <div className={'add-to-cart-notifications'}>
+    return (<div className={'add-to-cart-notifications'}>
 
-        </div>
-    )
+    </div>)
 }
 export const useCart = () => {
     const context = useContext(CartContext);

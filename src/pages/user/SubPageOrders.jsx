@@ -25,7 +25,7 @@ const SubPageOrders = () => {
     const [orders, setOrders] = useState([])
     const fetchOrders = async () => {
         try {
-            const response = await fetchWithRetry("api/user/orders", "GET")
+            const response = await fetchWithRetry("api/order/", "GET")
             if (response.status === 200) {
                 setOrders(response.data)
             }
@@ -94,75 +94,88 @@ const SubPageOrders = () => {
     </div>);
 };
 const Order = ({order, orderStatus}) => {
+    const [o, setO] = useState(order)
+
     const getStatus = useCallback(() => {
-        return order?.orderStatus
-    }, [order]);
-    const renderOrderActions = useCallback(() => {
+        return o?.orderStatus
+    }, [o]);
+    const cancelOrder = useCallback(async (orderId) => {
+        try {
+            const response = await fetchWithRetry(`api/order/${orderId}`, "PUT")
+            setO(response.data)
+            console.log(response.data)
+        } catch (error) {
+
+        }
+    }, []);
+    const renderOrderActions = useCallback((orderId) => {
         // eslint-disable-next-line default-case
         switch (getStatus()) {
             case "PROCESSING" :
                 return <>
                     <button className={"report"}>View</button>
                     <button className={"report"}>Report</button>
-                    <button className={"feedback"}>Cancel</button>
+                    <button onClick={() => {
+                        cancelOrder(orderId).then()
+                    }} className={"feedback"}>Cancel
+                    </button>
                 </>
             case "PENDING" :
                 return <>
-                <button className={"report"}>View</button>
+                    <button className={"report"}>View</button>
                     <button className={"report"}>Report</button>
-                    <button className={"feedback"}>Cancel</button>
+                    <button onClick={() => {
+                        cancelOrder(orderId).then()
+                    }} className={"feedback"}>Cancel
+                    </button>
                 </>
             case "CANCELLED" :
                 return <>
-                <button className={"report"}>View</button>
+                    <button className={"report"}>View</button>
                     <button className={"report"}>Report</button>
                 </>
             case "COMPLETED" :
                 return <>
-                <button className={"report"}>View</button>
+                    <button className={"report"}>View</button>
                     <button className={"report"}>Report</button>
                     <button className={"feedback"}>Feedback</button>
                 </>
 
         }
-    }, [getStatus]);
-    return (
-        <>
+    }, [cancelOrder, getStatus]);
+    return (<>
             {!orderStatus || orderStatus === getStatus() ? <div className={"order"}>
                 <div className={"order-header"}>
                     <p>#ORDER{order?.orderInformationId}</p>
                     <p>{getStatus()}</p>
                 </div>
-                {order?.items.map(item =>
-                    <div className={"item-in-order"}>
-                        <div className={"item-image"}>
-                            <img src={item?.book?.bookCover}/>
-                        </div>
-                        <div className={"item-details"}>
-                            <p>
-                                {item?.book.title}
-                            </p>
-                            <p className={"quantity"}>
-                                Quantity: {item?.quantity}
-                            </p>
-                        </div>
-                        <div className={"item-price"}>
-                            <p>
-                                ${item?.price}
-                            </p>
-                        </div>
+                {o?.items.map(item => <div className={"item-in-order"}>
+                    <div className={"item-image"}>
+                        <img src={item?.book?.bookCover}/>
                     </div>
-                )}
+                    <div className={"item-details"}>
+                        <p>
+                            {item?.book.title}
+                        </p>
+                        <p className={"quantity"}>
+                            Quantity: {item?.quantity}
+                        </p>
+                    </div>
+                    <div className={"item-price"}>
+                        <p>
+                            ${item?.price.toFixed(2)}
+                        </p>
+                    </div>
+                </div>)}
 
                 <div className={"order-footer"}>
                     <div className={"order-total"}>Total:<span>${order?.total}</span></div>
                     <div className={"order-actions"}>
-                        {renderOrderActions()}
+                        {renderOrderActions(order?.orderInformationId)}
                     </div>
                 </div>
             </div> : undefined}
-        </>
-    )
+        </>)
 }
 
 

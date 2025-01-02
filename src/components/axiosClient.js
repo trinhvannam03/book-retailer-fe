@@ -73,10 +73,10 @@ export const fetchWithRetry = async (path, method, payload, headers) => {
         if (error.response.status === 403) {
             try {
                 //always 401 so that we redirect to login page (if necessary) every time a 401 is thrown.
-                const session  = JSON.parse(localStorage.getItem("session"))
-                console.log(session)
+                const session = JSON.parse(localStorage.getItem("session"))
                 const refreshResponse = await axiosClient.post("auth/refresh", {
                     refreshToken: localStorage.getItem("refresh_token"),
+                    session: session
                 })
                 //other than 401. if still 403, redirect to login page.
                 if (refreshResponse.status === 200) {
@@ -91,68 +91,6 @@ export const fetchWithRetry = async (path, method, payload, headers) => {
         throw error;
     }
 }
-
-export async function fetchWithRefreshToken(path, method, headers, body) {
-
-    const baseURL = "http://localhost:3979/";
-    let accessToken = localStorage.getItem('access_token');
-    // First request
-    let response = await fetch(baseURL + path, {
-        method: method, headers: {
-            ...headers, 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}`,
-        }, body: JSON.stringify(body)
-    });
-
-    if (response.status === 206) {
-        const data = await response.json();
-        return {
-            data, statusCode: 206
-        }
-    } else if (response.status === 200) {
-        const data = await response.json();
-        return {
-            data, statusCode: 200
-        }
-    } else if (response.status === 403) {
-        if (accessToken) {
-            const refreshToken = localStorage.getItem("refresh_token")
-            const refreshResponse = await fetch(`${baseURL}auth/refresh`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({refresh_token: refreshToken}),
-            });
-            if (refreshResponse.status === 200) {
-                const refreshData = await refreshResponse.json();
-                const newAccessToken = refreshData.accessToken;
-                const newRefreshToken = refreshData.refreshToken;
-                localStorage.setItem('access_token', newAccessToken);
-                localStorage.setItem("refresh_token", newRefreshToken)
-
-                response = await fetch(baseURL + path, {
-                    method: method, headers: {
-                        ...headers, 'Content-Type': 'application/json', 'Authorization': `Bearer ${newAccessToken}`,
-                    }, body: JSON.stringify(body)
-                });
-                if (response.status === 200) {
-                    const data = await response.json();
-                    return {
-                        data, statusCode: 200
-                    }
-                } else {
-                    throwHttpError(response.status, undefined)
-                }
-            } else {
-                throwHttpError(refreshResponse.status, undefined)
-            }
-        } else {
-            throwHttpError(response.status, undefined)
-
-        }
-    } else {
-        throwHttpError(response.status, undefined)
-    }
-}
-
 
 export const ScrollToTop = ({children}) => {
     const {pathname} = useLocation();

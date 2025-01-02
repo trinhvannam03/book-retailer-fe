@@ -1,12 +1,14 @@
-import React, {useEffect, useState} from 'react';
-import {Link} from "react-router-dom";
+import React, {useEffect, useRef, useState} from 'react';
+import {Link, useNavigate} from "react-router-dom";
 import {IoSearch} from "react-icons/io5";
-import {axiosClient, fetchWithRetry} from "./axiosClient";
-import book from "../images/jared1.jpg"
+import {axiosClient} from "./axiosClient";
 import logo from "../images/0b6c68ac-b240-4f34-92be-9945fb90d12d.png"
 import {useAuthentication} from "../context/AuthenticationContext";
 import {useCart} from "../context/CartContext";
 import profilePicture from "../images/images.png"
+import no_result from "../images/no-result-found.jpg"
+import clsx from "clsx";
+import ProductBrief from "./ProductDisplay";
 
 export const defaultProfilePicture = () => {
     return (
@@ -15,44 +17,64 @@ export const defaultProfilePicture = () => {
         </>
     )
 }
-
 const Navbar = ({redirect}) => {
+    const inputRef = useRef(null);
     const [focused, setFocused] = useState(false);
     const [accountActionsShown, setAccountActionsShown] = useState(false);
-    const [keyword, setKeyword] = useState('');
-    const [searchResult, setSearchResult] = useState([])
-    const search = async () => {
-        if (keyword.length > 0) {
-            try {
-
-                const response = await axiosClient.get(`/api/search?keyword=${keyword}`);
-                if (response.status === 200) {
-
-                }
-            } catch (error) {
-            }
-        }
-    }
+    const [keyword, setKeyword] = useState(undefined);
+    const navigate = useNavigate();
     useEffect(() => {
-        search().then();
-    }, [keyword, search]);
-    const {isAuthenticated, basicInfo, logout} = useAuthentication();
+        const handleKeyDown = (event) => {
+            if (event.key === "Enter" && focused) {
+                // Navigate to the search page without reload
+                navigate(`/search?keyword=${keyword}`);
+                if (inputRef.current) {
+                    inputRef.current.blur(); // Trigger the blur event
+                }
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+
+        return () => {
+            // Cleanup the event listener
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [focused, keyword, navigate]);
+    const [searchResult, setSearchResult] = useState(undefined)
+    useEffect(() => {
+        const handler = setTimeout(async () => {
+            if (keyword) {
+                try {
+                    const response = await axiosClient.get(`/api/books/search?keyword=${keyword}`);
+                    if (response.status === 200) {
+                        setSearchResult(response.data)
+                    }
+                } catch (error) {
+                    setSearchResult([])
+                    console.error(error)
+                }
+            }
+        }, 100)
+        return () => {
+            clearTimeout(handler)
+        }
+    }, [keyword]);
+
+    const {isAuthenticated, profile, logout} = useAuthentication();
     const {records} = useCart();
 
     const alt = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnSA1zygA3rubv-VK0DrVcQ02Po79kJhXo_A&s"
     return (<>
         <>
-            <div className={"navbar banner"}>
-                Free shipping on orders $35+
-            </div>
             <div className={"navbar top"}>
                 <div className={"top-left"}>
                     <div className={"section"}>
                         {isAuthenticated ?
                             <>
                                 <img
-                                    src={basicInfo.profilePicture ? basicInfo.profilePicture : alt}/>
-                                Hello, {basicInfo.fullName}
+                                    src={profile.profilePicture ? profile.profilePicture : alt}/>
+                                Hello, {profile.fullName}
                                 <div className={`account-actions ${accountActionsShown && "shown"}`}>
                                     <div className={'button'}>
                                         <button onClick={() => {
@@ -93,9 +115,9 @@ const Navbar = ({redirect}) => {
                     </Link>
                 </div>
                 <div className={"search-section"}>
-                    <div className={`search-wrapper ${focused && "focused"}`}>
+                    <div className={clsx({"search-wrapper": true, "focused": focused})}>
                         <div className={`searchbar`}>
-                            <input placeholder={"What are your looking for?"}
+                            <input ref={inputRef} placeholder={"What are your looking for?"}
                                    onChange={(event) => {
                                        setTimeout(() => {
                                            setKeyword(event.target.value)
@@ -105,33 +127,37 @@ const Navbar = ({redirect}) => {
                                        setFocused(true)
                                    }}
                                    onBlur={() => {
-                                       setFocused(false)
+                                       setTimeout(() => {
+                                           setFocused(false)
+                                           if (keyword?.length === 0) {
+                                               setSearchResult(undefined)
+                                           }
+                                       }, 200)
                                    }}/>
                             <div className={`searchbutton ${focused && " focused"}`}>
                                 <IoSearch/>
                             </div>
                         </div>
-                        <div className={"search-results"}>
-                            <>
-                                <div className={"result-header"}>
-                                    <p>
-                                        Most Relevant Results
-                                    </p>
-                                    <Link to={"/search"}>Show All</Link>
-                                </div>
-                                <div className={"results"}>
-                                    <SearchResult/>
-                                    <SearchResult/>
-                                    <SearchResult/>
-                                    <SearchResult/>
-                                    <SearchResult/>
-                                    <SearchResult/>
-                                </div>
-                            </>
-                            :
-                            <>
-                            </>
-                        </div>
+                        {keyword && searchResult &&
+                            <div className={"search-results"}>
+                                {
+                                    searchResult?.length > 0 ?
+                                        <>
+                                            <div className={"result-header"}>
+                                                <p> Most Relevant Results </p>
+                                                <Link to={`/search?keyword=${keyword}`}>Show All</Link>
+                                            </div>
+                                            <div className={"results"}>
+                                                {searchResult.slice(0, 6).map(r => <SearchResult result={r}/>)}
+                                            </div>
+                                        </>
+                                        :
+                                        <>
+                                            <img className={"no-result"} src={no_result}/>
+                                        </>
+                                }
+                            </div>
+                        }
                     </div>
                 </div>
                 <div className={"cart-section"}>
@@ -176,19 +202,19 @@ const Navbar = ({redirect}) => {
                 </div>
             </div>
         </>
-    </>);
+    </>)
+        ;
 };
 
 const SearchResult = ({result}) => {
-
     return (
-        <Link to={"/book/a"} className={"result"}>
+        <Link to={`/book/${result?.id}`} className={"result"}>
             <div className={"result-image"}>
-                <img src={book} alt={"/"}/>
+                <img src={result?.book_cover} alt={"/"}/>
             </div>
             <div className={"result-details"}>
-                <p>A Demon's Guide to Wooing a Witch</p>
-                <h4>$7.99</h4>
+                <p>{result?.title}</p>
+                <h4>${result?.price.toFixed(2)}</h4>
             </div>
         </Link>)
 }

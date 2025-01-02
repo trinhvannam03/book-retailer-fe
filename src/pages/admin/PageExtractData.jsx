@@ -216,7 +216,7 @@ const CategoryDisplay = ({category, search, setCategoryIds}) => {
             {category.categoryName}
         </p>}
 
-        {category.children.map(child => <CategoryDisplay setCategoryIds={setCategoryIds} key={child.categoryId}
+        {category.children.map(child => <CategoryDisplay  setCategoryIds={setCategoryIds} key={child.categoryId}
                                                          category={child}/>)}
     </div>)
 }

@@ -1,9 +1,11 @@
 .page-content {
+
   &.page-auth {
     display: flex;
     align-items: center;
     justify-content: flex-start;
     flex-direction: column;
+    min-height: 100vh;
 
     .forms-wrapper {
       width: 45%;
@@ -77,6 +79,7 @@
           align-items: center;
           justify-content: flex-start;
           flex-direction: column;
+
           .checkbox {
             margin-right: 5px;
           }
@@ -283,5 +286,18 @@
 
       }
     }
+
+
+  }
+}
+
+.processing {
+  height: 50vh;
+
+  .blur {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(117, 114, 114, 0.25);
   }
 }

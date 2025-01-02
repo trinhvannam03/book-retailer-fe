@@ -10,12 +10,12 @@ import {ScrollToTop} from "../components/axiosClient";
 
 const Item = ({record}) => {
     const {deleteFromCart, checkedItems, checkItem, updateCart} = useCart();
-    const [quantity, setQuantity] = useState(record.quantity);
+    const [quantity, setQuantity] = useState(record?.quantity);
     useEffect(() => {
         const update = setTimeout(() => {
             if (quantity !== staleQuantity) {
                 try {
-                    updateCart({cart_record_id: record.id, quantity: quantity})
+                    updateCart({id: record?.id, quantity: quantity})
                 } catch (error) {
                     setQuantity(staleQuantity)
                 }
@@ -26,17 +26,19 @@ const Item = ({record}) => {
         }
     }, [quantity, updateCart]);
     const [staleQuantity, setStaleQuantity] = useState(quantity);
-    const [checked, setChecked] = useState(checkedItems.includes(record.id));
+    const [checked, setChecked] = useState(checkedItems.includes(record?.id));
+
     const [outOfStock, setOutOfStock] = useState(false)
     useEffect(() => {
         checkItem(record.id, checked)
     }, [checkItem, checked, record.id]);
     useEffect(() => {
         setChecked(checkedItems.includes(record.id));
-    }, [checkedItems, record.id]);
+        console.log(checkedItems)
+    }, [checkedItems]);
 
     return (<div className={clsx({
-        "item-wrapper": true, "out-of-stock": record?.book?.stock < record.quantity
+        "item-wrapper": true, "out-of-stock": record?.book?.stock < record?.quantity
     })}>
         <div className={"blurred-item"}>
         </div>
@@ -50,7 +52,7 @@ const Item = ({record}) => {
                 </div>
             </div>
             <div className={"item-information"}>
-                <Link to={`/book/${record?.book.isbn}`}>
+                <Link to={`/book/${record?.book.bookId}`}>
                     <img src={record?.book.bookCover}/>
                 </Link>
             </div>
@@ -96,75 +98,77 @@ const Item = ({record}) => {
 }
 
 const PageCart = () => {
-    const {fetchCart, getPreliminaryCalculation, records, setCoupon, getCheckoutData} = useCart();
+    const {fetchCart, getPreliminaryCalculation, records, checkedItems, setCoupon, getCheckoutData} = useCart();
     useEffect(() => {
         fetchCart().then();
     }, [fetchCart]);
-
-    return (
-        <div className="page">
-            <ScrollToTop/>
-            <Navbar></Navbar>
-            <>
-                <div className={"page-content page-cart"}>
-                    <div className={"page-content-header"}>
-                        <p>Your Shopping Cart</p>
-                    </div>
-                    <div className={"main-content"}>
-                        <div className={"items"}>
-                            <div className={"items-header"}>
-                                <div className={"header-title"}></div>
-                                <div className={"header-title"}>Items</div>
-                                <div className={"header-title"}></div>
-                                <div className={"header-title price"}>Price</div>
-                                <div className={"header-title quantity"}>Quantity</div>
-                                <div className={"header-title total"}>Total</div>
-                            </div>
-                            {records && [...records.values()].map(record => <Item
-                                key={record?.id + "_" + record?.quantity}
-                                record={record}
-                            />)}
-                        </div>
-                        <div className={"billing"}>
-                            <div className={"billing-header"}>
-                                Coupon
-                            </div>
-                            <div className={"coupon-input"}>
-                                <input onChange={(event) => {
-                                    setCoupon(event.target.value)
-                                }}/>
-                                <button>Apply</button>
-                                <div className={"label"}>Coupon Code</div>
-
-                            </div>
-                            <div className={"billing-header"}>
-                                Order Summary
-                            </div>
-                            <div className={"bill"}>
-                                <div><p>Subtotal:</p>
-                                    <p>${getPreliminaryCalculation().subtotal}
-                                    </p>
-                                </div>
-                                <div><p>Discount:</p><p>${getPreliminaryCalculation().discount}</p></div>
-                                <div className={"line"}></div>
-                                <div className={"total"}><p>Total:</p>
-                                    <p>
-                                        ${getPreliminaryCalculation().total}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <Link to={`/checkout?state=${getCheckoutData()}`}
-                                  className={"proceed"}>Proceed To
-                                Checkout
-                            </Link>
-                        </div>
-                    </div>
-                    <FeaturedSection header={"From This Author"}/>
-                    {/*<FeaturedSection number={5} header={"Others Also Bought"}/>*/}
+    const items = checkedItems.map(c => {
+        const record = records.get(c);
+        return {
+            book: record.book, quantity: record?.quantity
+        }
+    })
+    return (<div className="page">
+        <ScrollToTop/>
+        <Navbar></Navbar>
+        <>
+            <div className={"page-content page-cart"}>
+                <div className={"page-content-header"}>
+                    <p>Your Shopping Cart</p>
                 </div>
-                <Footer/>
-            </>
-        </div>);
+                <div className={"main-content"}>
+                    <div className={"items"}>
+                        <div className={"items-header"}>
+                            <div className={"header-title"}></div>
+                            <div className={"header-title"}>Items</div>
+                            <div className={"header-title"}></div>
+                            <div className={"header-title price"}>Price</div>
+                            <div className={"header-title quantity"}>Quantity</div>
+                            <div className={"header-title total"}>Total</div>
+                        </div>
+                        {records && [...records.values()].map(record => <Item
+                            key={record?.id + "_" + record?.quantity}
+                            record={record}
+                        />)}
+                    </div>
+                    <div className={"billing"}>
+                        <div className={"billing-header"}>
+                            Coupon
+                        </div>
+                        <div className={"coupon-input"}>
+                            <input onChange={(event) => {
+                                setCoupon(event.target.value)
+                            }}/>
+                            <button>Apply</button>
+                            <div className={"label"}>Coupon Code</div>
+
+                        </div>
+                        <div className={"billing-header"}>
+                            Order Summary
+                        </div>
+                        <div className={"bill"}>
+                            <div><p>Subtotal:</p>
+                                <p>${getPreliminaryCalculation().subtotal}
+                                </p>
+                            </div>
+                            <div><p>Discount:</p><p>${getPreliminaryCalculation().discount}</p></div>
+                            <div className={"line"}></div>
+                            <div className={"total"}><p>Total:</p>
+                                <p>
+                                    ${getPreliminaryCalculation().total}
+                                </p>
+                            </div>
+                        </div>
+
+                        <Link to={`/checkout?state=${getCheckoutData("ONLINE", items)}`}
+                              className={"proceed"}>Proceed To
+                            Checkout
+                        </Link>
+                    </div>
+                </div>
+            </div>
+            <Footer/>
+        </>
+    </div>);
 };
 export default PageCart;

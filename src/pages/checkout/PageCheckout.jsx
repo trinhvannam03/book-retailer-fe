@@ -38,7 +38,7 @@ const DropdownContent_Address = ({setAddress: superSetAddress, setShipping}) => 
     const [cities, setCities] = useState([])
 
     const fetchCountries = useCallback(async () => {
-        const response = await axiosClient.get("/api/user/address/countries")
+        const response = await axiosClient.get("/api/address/countries")
         if (response.status === 200) {
             setCountries(response.data)
         }
@@ -46,7 +46,7 @@ const DropdownContent_Address = ({setAddress: superSetAddress, setShipping}) => 
     const fetchCities = useCallback(async () => {
         if (address && address.state?.id) {
             try {
-                const response = await axiosClient.get(`/api/user/address/cities/${address.state.id}`)
+                const response = await axiosClient.get(`/api/address/cities/${address.state.id}`)
                 if (response.status === 200) {
                     setCities(response.data)
                 }
@@ -57,7 +57,7 @@ const DropdownContent_Address = ({setAddress: superSetAddress, setShipping}) => 
     const fetchStates = useCallback(async () => {
         if (address && address.country?.id) {
             try {
-                const response = await axiosClient.get(`api/user/address/states/${address.country.id}`)
+                const response = await axiosClient.get(`api/address/states/${address.country.id}`)
                 if (response.status === 200) {
                     setStates(response.data)
                 }
@@ -76,12 +76,14 @@ const DropdownContent_Address = ({setAddress: superSetAddress, setShipping}) => 
         fetchStates().then()
     }, [fetchStates]);
     //render all addresses (options)
-    const [addresses, setAddresses] = useState([]);
+    const [addresses, setAddresses] = useState(new Map());
     const fetchAddress = async () => {
         try {
             const response = await fetchWithRetry("api/user/address", "GET")
             if (response.status === 200) {
-                setAddresses(response.data)
+                const addressMap = response.data.map(a => [a.id, a])
+                const newMap = new Map(addressMap)
+                setAddresses(newMap)
             }
         } catch (error) {
         }
@@ -95,6 +97,11 @@ const DropdownContent_Address = ({setAddress: superSetAddress, setShipping}) => 
             const response = await fetchWithRetry("api/user/address", "POST", address);
             if (response.status === 200) {
                 setSelectedAddress(response.data)
+                setAddresses(prev => {
+                    const newMap = new Map(prev)
+                    newMap.set(response.data?.id, response.data)
+                    return newMap;
+                })
                 setAddress(undefined)
                 setAction(1)
             }
@@ -118,7 +125,7 @@ const DropdownContent_Address = ({setAddress: superSetAddress, setShipping}) => 
                 Select an address
             </div>
             <div className={"all-addresses"}>
-                {addresses?.map(address => <>
+                {[...addresses?.values()].map(address => <>
                     <div key={address.id}
                          className={clsx({'address': true, 'selected': isSelected(address)})}>
                         <div onClick={() => {
@@ -162,7 +169,7 @@ const DropdownContent_Address = ({setAddress: superSetAddress, setShipping}) => 
                     <div className="address-input-placeholder">Full Name</div>
                 </div>
                 <div className="address-input-wrapper">
-                    <input  defaultValue={address?.phone} onChange={(event) => {
+                    <input defaultValue={address?.phone} onChange={(event) => {
                         setAddress(prev => {
                             return {...prev, phone: event.target.value}
                         })
@@ -178,7 +185,8 @@ const DropdownContent_Address = ({setAddress: superSetAddress, setShipping}) => 
                     <div className="address-input-placeholder">Street & Number</div>
                 </div>
                 <div className="address-input-wrapper">
-                    <input className={"no-caret"} value={address && address.country ? address.country.name : ''} placeholder=" " required/>
+                    <input className={"no-caret"} value={address && address.country ? address.country.name : ''}
+                           placeholder=" " required/>
                     <div className="address-input-placeholder">Country</div>
                     <div className={`dropdown-options`}>
                         {countries && countries.map(country => <div onClick={() => {
@@ -196,7 +204,8 @@ const DropdownContent_Address = ({setAddress: superSetAddress, setShipping}) => 
                     </div>
                 </div>
                 <div className="address-input-wrapper">
-                    <input className={"no-caret"} value={address && address.state ? address.state.name : ''} placeholder=" " required/>
+                    <input className={"no-caret"} value={address && address.state ? address.state.name : ''}
+                           placeholder=" " required/>
                     <div className="address-input-placeholder">State</div>
                     <div className={`dropdown-options`}>
                         {states && states.map(state => <div onClick={() => {
@@ -214,7 +223,8 @@ const DropdownContent_Address = ({setAddress: superSetAddress, setShipping}) => 
                     </div>
                 </div>
                 <div className="address-input-wrapper">
-                    <input className={"no-caret"} placeholder=" " value={address && address.city ? address.city.name : ''} required/>
+                    <input className={"no-caret"} placeholder=" "
+                           value={address && address.city ? address.city.name : ''} required/>
                     <div className="address-input-placeholder">City</div>
                     <div className={`dropdown-options`}>
                         {cities && cities.map(city => <div onClick={() => {
@@ -243,7 +253,7 @@ const DropdownContent_Items = ({state, setItems: superSetItems}) => {
     const [items, setItems] = useState([])
     const fetchItems = useCallback(async () => {
         try {
-            const response = await axiosClient.post("api/cart/checked-items", state.items)
+            const response = await axiosClient.post(`api/cart/checked-items?type=${state.type}`, state.items)
             if (response.status === 200) {
                 setItems(response.data)
             }
@@ -273,7 +283,7 @@ const DropdownContent_Items = ({state, setItems: superSetItems}) => {
                         ISBN: {item?.book.isbn}
                     </div>
                 </div>
-                <div className={'checked-item-info'}>{item.book.price}</div>
+                <div className={'checked-item-info'}>{item.book.price.toFixed(2)}</div>
                 <div className={'checked-item-info'}>x{item.quantity}</div>
                 <div className={'checked-item-info'}>{calculateTotal(item)}</div>
             </div>)}
@@ -478,7 +488,7 @@ const PageCheckout = () => {
             const book = item.book;
             return {
                 cartRecordId: item.id,
-                bookId: book.id,
+                bookId: book.bookId,
                 quantity: item.quantity,
                 price: book.price
             }
@@ -496,6 +506,7 @@ const PageCheckout = () => {
                     latitude: ''
                 },
                 payment: payment,
+                orderType: state.type,
                 items: data,
                 estimatedShippingFee: shipping,
                 estimatedTotal: total,

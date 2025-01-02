@@ -1,35 +1,26 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {axiosClient} from "./axiosClient";
 import {BsChevronLeft, BsChevronRight} from "react-icons/bs";
 import ProductBrief from "./ProductDisplay";
-import {useCart} from "../context/CartContext";
 
-const FeaturedSection = ({header, fetchRandomProduct, number}) => {
-    const [products, setProducts] = useState([])
-    const fetchRandom = async () => {
-        try {
-            const response = await axiosClient.get("/api/books/random");
-            if (response.status === 200) {
-                return response.data;
-            }
-        } catch (error) {
-            return []
-        }
-    }
-    const fetchData = async () => {
-        if (fetchRandomProduct) {
-            const data = await fetchRandomProduct();
-            setProducts(data);
-        } else {
-            const data = await axiosClient.get("/api/books/random");
-            if (data.status === 200) {
-                setProducts(data.data);
+const FeaturedSection = ({header, fetchUrl, number}) => {
+    const [books, setBooks] = useState([])
+    const fetchData = useCallback(async () => {
+        if (fetchUrl) {
+            try {
+                const response = await axiosClient.get(fetchUrl)
+                if (response.status === 200) {
+                    setBooks(response.data);
+                }
+            } catch (e) {
+
             }
         }
-    }
+    }, [fetchUrl]);
+
     useEffect(() => {
-        fetchData();
-    }, []);
+        fetchData().then();
+    }, [fetchData]);
 
     return (
         <div className={"featured-section"}>
@@ -44,8 +35,8 @@ const FeaturedSection = ({header, fetchRandomProduct, number}) => {
                     <BsChevronLeft/>
                 </div>
                 {
-                    products && products.slice(0, number ? number : 5).map(product => <ProductBrief
-                        book={product}/>)
+                    books?.slice(0, number ? number : 5).map(book => <ProductBrief id={book?.bookId}
+                        book={book}/>)
                 }
                 <div className={'to right'}>
                     <BsChevronRight/>

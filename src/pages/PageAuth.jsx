@@ -2,80 +2,39 @@ import React, {useEffect, useState} from 'react';
 import {Link} from "react-router-dom";
 import Checkbox from "../components/Checkbox";
 import {axiosClient} from "../components/axiosClient";
-import Spinner from "../components/LoadingSpinner";
-import {FaCheck} from "react-icons/fa";
-import {IoClose} from "react-icons/io5";
-import Navbar from "../components/Navbar";
 import PageWrapper from "../components/PageWrapper";
-import {useAuthentication} from "../context/AuthenticationContext";
+import {oauthURL, useAuthentication} from "../context/AuthenticationContext";
 
 const PageAuth = () => {
     const [switcher, setSwitcher] = useState(false);
-    const [messageShown, setMessageShown] = useState(false)
-    const [successful, setSuccessful] = useState(false);
-    const [message, setMessage] = useState();
-    const [loading, setLoading] = useState(false);
-    useEffect(() => {
-        if (messageShown) {
-            setTimeout(() => {
-                setLoading(false)
-            }, 1000)
-            setTimeout(() => {
-                setMessageShown(false)
-            }, 5000)
-        }
-    }, [messageShown]);
-
-    return (
-        <PageWrapper>
-
-            <div className={`request-message ${messageShown ? "transform" : ''}`}>
-                <div className={"content"}>
-                    <div className={"result-icon"}>
-                        {successful ? <FaCheck className={"success"}/> : <IoClose className={"failed"}/>}
-                    </div>
-                    <p>
-                        {message}
-                    </p>
-                    {!loading && <div onClick={() => {
-                        setMessageShown(false)
-                    }} className={"close-notification"}>
-                        <IoClose/>
-                    </div>}
-                </div>
-            </div>
-            {loading && <div className={"blur"}>
-                {!messageShown && <Spinner/>}
-            </div>}
-            <div className={"page-content page-auth"}>
-                <div className={"forms-wrapper"}>
-                    <div className={"switcher"}>
-                        <button style={switcher ? undefined : styles.selected} onClick={() => {
-                            setSwitcher(false)
-                        }}>SIGN IN
-                        </button>
-                        <button style={switcher ? styles.selected : undefined} onClick={() => {
-                            setSwitcher(true)
-                        }}>CREATE ACCOUNT
-                        </button>
-                        <div className={"glider"}>
-                            <div style={!switcher ? styles.login : undefined} className={"slider"}>
-                            </div>
+    return (<PageWrapper>
+        <div className={"page-content page-auth"}>
+            <div className={"forms-wrapper"}>
+                <div className={"switcher"}>
+                    <button style={switcher ? undefined : styles.selected} onClick={() => {
+                        setSwitcher(false)
+                    }}>SIGN IN
+                    </button>
+                    <button style={switcher ? styles.selected : undefined} onClick={() => {
+                        setSwitcher(true)
+                    }}>CREATE ACCOUNT
+                    </button>
+                    <div className={"glider"}>
+                        <div style={!switcher ? styles.login : undefined} className={"slider"}>
                         </div>
                     </div>
-                    <div className={`forms`}>
-                        <LoginForm loading={loading} setMessageShown={setMessageShown} setLoading={setLoading}
-                                   setSuccessful={setSuccessful}
-                                   setMessage={setMessage} switcher={switcher}/>
-                        <RegisterForm/>
-                    </div>
+                </div>
+                <div className={`forms`}>
+                    <LoginForm switcher={switcher}/>
+                    <RegisterForm/>
                 </div>
             </div>
-        </PageWrapper>);
+        </div>
+    </PageWrapper>);
 };
-const LoginForm = ({switcher, setMessageReceived, setMessageShown, setMessage, setSuccessful, setLoading, loading}) => {
+const LoginForm = ({switcher}) => {
     const [messages, setMessages] = useState({})
-    const {collectBrowserInfo} = useAuthentication()
+    const {browser} = useAuthentication()
     const [identifier, setIdentifier] = useState(undefined)
     const [password, setPassword] = useState(undefined)
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -83,7 +42,7 @@ const LoginForm = ({switcher, setMessageReceived, setMessageShown, setMessage, s
     const [debounceIdentifier, setDebounceIdentifier] = useState(undefined)
     const [debouncePassword, setDebouncePassword] = useState(undefined);
     const [identifierValid, setIdentifierValid] = useState(false);
-    const [status, setStatus] = useState("")
+    const [status, setStatus] = useState("");
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebounceIdentifier(identifier)
@@ -136,87 +95,288 @@ const LoginForm = ({switcher, setMessageReceived, setMessageShown, setMessage, s
                 }
             })
         }
-    }, [debounceIdentifier]);
-    const [successfulLogin, setSuccessfulLogin] = useState(false);
+    }, [debounceIdentifier, emailRegex, phoneRegex]);
+    const redirectURL = oauthURL
     const login = async () => {
-        setMessageShown(false);
-        setStatus('');
-        setLoading(true);
-        setMessage(undefined)
-        setTimeout(async () => {
-            const browser = await collectBrowserInfo();
-            try {
-                const response = await axiosClient.post("/auth/login", {
-                    identifier, password, ...browser
-                });
-                setMessageShown(true);
-                if (response.status === 200) {
-                    setSuccessful(true);
-                    setMessage(response.data.message);
-                    const {
-                        accessToken,
-                        refreshToken,
-                        session
-                    } = response.data
-                    const {
-                        sessionId,
-                        deviceType,
-                        createdAt,
-                        expiredAt,
-                        sessionStatus,
-                        ipAddress,
-                        browserName,
-                        osName,
-                        osVersion,
-                        timestamp,
-                        userAgent
-                    } = session
-                    localStorage.setItem("access_token", accessToken)
-                    localStorage.setItem("refresh_token", refreshToken);
-                    localStorage.setItem("session", JSON.stringify(session));
-                    setTimeout(() => {
-                        window.location.href = "http://localhost:3000/"
-                    }, 1000)
+        try {
+            const response = await axiosClient.post("/auth/login", {
+                identifier, password, ...browser
+            });
+            if (response.status === 200) {
+                const {
+                    accessToken, refreshToken, session
+                } = response.data
+                localStorage.setItem("access_token", accessToken)
+                localStorage.setItem("refresh_token", refreshToken);
+                localStorage.setItem("session", JSON.stringify(session));
+                window.location.href = "http://localhost:3000/"
+            }
+        } catch (error) {
+            setStatus("Invalid identifier/password")
+            setTimeout(() => {
+                setStatus(undefined)
+            }, 2000)
+        }
+    }
+    return (<div className={`form login ${!switcher && "switched"}`}>
+        <div className={"wrapper"}>
+            <div className={"title"}>
+                Sign In
+            </div>
+            <div className="input-wrapper">
+                <input
+                    onChange={(event) => {
+                        setIdentifier(event.target.value)
+                    }}
+                    className="input-field"
+                    placeholder=" "
+                    required
+                />
+                <div className="input-placeholder">Your Email Or Phone*</div>
+            </div>
+            <div className={"message"}>
+                {messages && messages.identifier}
+            </div>
+            <div className="input-wrapper">
+                <input onChange={(event) => {
+                    setPassword(event.target.value)
+                }}
+                       className="input-field"
+                       placeholder=" "
+                       required/>
+                <div className="input-placeholder">Password*</div>
+            </div>
+            <div className={"message"}>
+                {messages && messages.password}
+            </div>
+            <Link to={"/"}>Forgot Password?</Link>
+            <>
+                <div className={"remember-me"}>
+                    <Checkbox/>
+                    Remember Me
+                </div>
+                <button disabled={!identifierValid || password === undefined || password.trim() === ""}
+                        onClick={() => {
+                            login();
+                        }}>Sign In
+                </button>
+                <div className={"message"}>{status}</div>
+                <div className={"or"}>
+                    <div></div>
+                    or
+                    <div></div>
+                </div>
+                <div className={"oauths"}>
+                    <div onClick={() => {
+                        // Opens a new tab with the specified URL
+                        window.open(redirectURL, '_blank');
+                    }} className={"oauth google"}>
+                        <Google/> Google
+                    </div>
+                    <div className={"oauth facebook"}>
+                        <Facebook/>Facebook
+                    </div>
+                </div>
+            </>
+        </div>
+    </div>)
+}
+const RegisterForm = () => {
+    const requiredFieldMessage = "This field is required"
+    const [password, setPassword] = useState(undefined);
+    const [confirmedPassword, setConfirmedPassword] = useState(undefined);
+    const [email, setEmail] = useState(undefined)
+    const validateEmail = async () => {
+        try {
+            const response = await axiosClient.post("auth/validate_email", {email})
+            if (response.status === 200) {
+                setMessages(prev => {
+                    return {...prev, email: response.data.email}
+                })
+            }
+        } catch (error) {
+
+        }
+    }
+    const [fullName, setFullName] = useState(undefined)
+    useEffect(() => {
+        const message = "Name must be at least two words long"
+        const nameRegex = /^[A-Za-z]+(?:\s+[A-Za-z]+)+$/;
+        const handler = setTimeout(() => {
+            setMessages(prev => {
+                return {
+                    ...prev, fullName: undefined
                 }
-            } catch (error) {
-                setMessageShown(true);
-                setSuccessful(false);
-                if (!error.response) {
-                    setMessage("Network Error!")
-                } else if (error.response.status === 404) {
-                    setMessage("Login Failed!")
-                } else if (error.response.status === 400) {
-                    setMessage("Login Failed!")
-                    setMessages(error.response.data)
-                    setStatus(error.response.data.message)
-                    setLoading(false);
+            })
+            if (fullName?.length > 0) {
+                if (!nameRegex.test(fullName)) {
+                    setMessages(prev => {
+                        return {
+                            ...prev, fullName: message
+                        }
+                    })
+                }
+            } else if (fullName?.length === 0) {
+                setMessages(prev => {
+                    return {
+                        ...prev, fullName: requiredFieldMessage
+                    }
+                })
+            }
+        }, 300)
+        return () => {
+            clearTimeout(handler)
+        }
+    }, [fullName]);
+    useEffect(() => {
+        const message = "Invalid email"
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        const handler = setTimeout(() => {
+            setMessages(prev => {
+                return {
+                    ...prev, email: undefined
+                }
+            })
+            if (email?.length > 0) {
+                if (!emailRegex.test(email)) {
+                    setMessages(prev => {
+                        return {
+                            ...prev, email: message
+                        }
+                    })
+                } else {
+                    validateEmail().then()
+                }
+            } else if (email?.length === 0) {
+                setMessages(prev => {
+                    return {
+                        ...prev, email: requiredFieldMessage
+                    }
+                })
+            }
+        }, 300)
+        return () => {
+            clearTimeout(handler)
+        }
+    }, [email]);
+    useEffect(() => {
+        const message = "Password must be at least 6 characters long" + " and contain at least one uppercase letter and one digit."
+        const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{6,}$/;
+        const handler = setTimeout(() => {
+            setMessages(prev => {
+                return {
+                    ...prev, password: undefined
+                }
+            })
+            if (password?.length > 0) {
+                if (!passwordRegex.test(password)) {
+                    setMessages(prev => {
+                        return {
+                            ...prev, password: message
+                        }
+                    })
+                }
+            } else if (password?.length === 0) {
+                setMessages(prev => {
+                    return {
+                        ...prev, password: requiredFieldMessage
+                    }
+                })
+            }
+        }, 300)
+        return () => {
+            clearTimeout(handler)
+        }
+    }, [password]);
+    useEffect(() => {
+        const message = "Password must match confirmed password"
+        const handler = setTimeout(() => {
+            setMessages(prev => {
+                return {
+                    ...prev, confirmedPassword: undefined
+                }
+            })
+            if (password?.length > 0) {
+                if (confirmedPassword?.length > 0) {
+                    if (confirmedPassword !== password) {
+                        setMessages(prev => {
+                            return {
+                                ...prev, confirmedPassword: message
+                            }
+                        })
+                    }
+                } else if (confirmedPassword?.length === 0) {
+                    setMessages(prev => {
+                        return {
+                            ...prev, confirmedPassword: requiredFieldMessage
+                        }
+                    })
                 }
             }
-        }, 500)
 
+        }, 300)
+        return () => {
+            clearTimeout(handler)
+        }
+    }, [confirmedPassword, password]);
+    const [messages, setMessages] = useState({});
+    const submit = async () => {
+        try {
+            const response = await axiosClient.post("/auth/register", {
+                password, email, fullName, confirmedPassword
+            });
+            if (response.status === 200) {
+                const {
+                    accessToken, refreshToken, session
+                } = response.data
+                localStorage.setItem("access_token", accessToken)
+                localStorage.setItem("refresh_token", refreshToken);
+                localStorage.setItem("session", JSON.stringify(session));
+                window.location.href = "localhost:3000/"
+            }
+        } catch (error) {
+            if (error.response?.status === 400) {
+
+            }
+        }
     }
-    return (
-        <div className={`form login ${!switcher && "switched"}`}>
-            <div className={"wrapper"}>
-                <div className={"title"}>
-                    Sign In
-                </div>
+
+    return (<div className={`form register`}>
+        <div className={"wrapper"}>
+            <div className={"title"}>
+                Register
+            </div>
+            <>
                 <div className="input-wrapper">
                     <input
                         onChange={(event) => {
-                            setIdentifier(event.target.value)
+                            setFullName(event.target.value)
                         }}
                         className="input-field"
                         placeholder=" "
                         required
                     />
-                    <div className="input-placeholder">Your Email Or Phone*</div>
+                    <div className="input-placeholder">Full Name*</div>
                 </div>
-                <div className={"message"}>
-                    {messages && messages.identifier}
-                </div>
+                <div
+                    className={"message"}>{messages?.fullName}</div>
                 <div className="input-wrapper">
                     <input
+                        onChange={(event) => {
+                            setEmail(event.target.value)
+                        }}
+                        className="input-field"
+                        placeholder=" "
+                        required
+                    />
+                    <div className="input-placeholder">Email*</div>
+                </div>
+                <div
+                    className={"message"}>{messages?.email}</div>
+
+                <div className="input-wrapper">
+                    <input
+                        type={"password"}
                         onChange={(event) => {
                             setPassword(event.target.value)
                         }}
@@ -226,197 +386,64 @@ const LoginForm = ({switcher, setMessageReceived, setMessageShown, setMessage, s
                     />
                     <div className="input-placeholder">Password*</div>
                 </div>
-                <div className={"message"}>
-                    {messages && messages.password}
+                <div
+                    className={"message"}>{messages?.password}</div>
+
+                <div className="input-wrapper">
+                    <input type={"password"}
+                           onChange={(event) => {
+                               setConfirmedPassword(event.target.value)
+                           }}
+                           className="input-field"
+                           placeholder=" "
+                           required
+                    />
+                    <div className="input-placeholder">Confirm Password*</div>
                 </div>
-                <Link to={"/"}>Forgot Password?</Link>
-                <>
-                    <div className={"remember-me"}>
-                        <Checkbox/>
-                        Remember Me
-                    </div>
-                    <button disabled={!identifierValid || password === undefined || password.trim() === ""}
-                            onClick={() => {
-                                login();
-                            }}>Sign In
-                    </button>
-                    <div className={"message"}>{status}</div>
-
-                    <div className={"or"}>
-                        <div></div>
-                        or
-                        <div></div>
-                    </div>
-                    <div className={"oauths"}>
-                        <div className={"oauth google"}>
-                            <Google/> Google
-                        </div>
-                        <div className={"oauth facebook"}>
-                            <Facebook/>Facebook
-                        </div>
-                    </div>
-                </>
-            </div>
-        </div>)
-}
-const RegisterForm = () => {
-    const [registerInfo, setRegisterInfo] = useState({})
-    const [confirmedPassword, setConfirmedPassword] = useState('');
-
-    const [debouncedRegisterInfo, setDebouncedRegisterInfo] = useState(registerInfo);
-    const [messages, setMessages] = useState({});
-    const [match, setMatch] = useState(null)
-    const submit = async () => {
-        try {
-            const response = await axiosClient.post("/auth/register", {...debouncedRegisterInfo, confirmedPassword});
-            if (response.status === 200) {
-
-            }
-        } catch (error) {
-
-        }
-    }
-
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedRegisterInfo(registerInfo);
-        }, 500);
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [registerInfo]);
-    const validateInfo = async () => {
-        try {
-            const response = await axiosClient.post("/auth/validate", registerInfo);
-            if (response.status === 200) {
-                setMessages(response.data)
-            }
-        } catch (error) {
-            if (error.response.status === 400) {
-                setMessages(error.response.data)
-            }
-        }
-    }
-    useEffect(() => {
-        validateInfo().then();
-    }, [debouncedRegisterInfo]);
-
-    return (
-        <div className={`form register`}>
-            <div className={"wrapper"}>
-                <div className={"title"}>
-                    Register
-                </div>
-                <>
-                    <div className="input-wrapper">
-                        <input
-                            onChange={(event) => {
-                                setRegisterInfo(prev => {
-                                    return {
-                                        ...prev, fullName: event.target.value
-                                    }
-                                })
-                            }}
-                            className="input-field"
-                            placeholder=" "
-                            required
-                        />
-                        <div className="input-placeholder">Full Name*</div>
-                    </div>
-                    <div
-                        className={"message"}>{registerInfo.fullName !== undefined && messages && messages.fullName}</div>
-                    <div className="input-wrapper">
-                        <input
-                            onChange={(event) => {
-                                setRegisterInfo(prev => {
-                                    return {
-                                        ...prev, email: event.target.value
-                                    }
-                                })
-                            }}
-                            className="input-field"
-                            placeholder=" "
-                            required
-                        />
-                        <div className="input-placeholder">Email*</div>
-                    </div>
-                    <div
-                        className={"message"}>{registerInfo.email !== undefined && messages && messages.email}</div>
-
-                    <div className="input-wrapper">
-                        <input
-                            type={"password"}
-                            onChange={(event) => {
-                                setRegisterInfo(prev => {
-                                    return {
-                                        ...prev, password: event.target.value
-                                    }
-                                })
-                            }}
-                            className="input-field"
-                            placeholder=" "
-                            required
-                        />
-                        <div className="input-placeholder">Password*</div>
-                    </div>
-                    <div
-                        className={"message"}>{registerInfo.password !== undefined && messages && messages.password}</div>
-
-                    <div className="input-wrapper">
-                        <input type={"password"}
-                               onChange={(event) => {
-                                   setConfirmedPassword(event.target.value)
-                               }}
-                               className="input-field"
-                               placeholder=" "
-                               required
-                        />
-                        <div className="input-placeholder">Confirm Password*</div>
-                    </div>
-
-                </>
-                <>
-                    <div className={"subscribe"}>
-                        <Checkbox/>
-                        <div className={"check"}>
-                            <div>
-                                Subscribe to Newsletter
-                            </div>
-                            <p>
-                                Be the first to know about sales, new arrivals & more!
-                            </p>
-                        </div>
-                    </div>
-                    <div className={"agreement"}>
-                        <Checkbox/>
+                <div
+                    className={"message"}>{messages?.confirmedPassword}</div>
+            </>
+            <>
+                <div className={"subscribe"}>
+                    <Checkbox/>
+                    <div className={"check"}>
                         <div>
-                            By creating an account, you are agreeing to our <span><a
-                            href={"https://bookoutlet.com/privacy-policy"}>Privacy Policy</a></span> and
-                            our <span><a href={"https://bookoutlet.com/privacy-policy"}>Terms
+                            Subscribe to Newsletter
+                        </div>
+                        <p>
+                            Be the first to know about sales, new arrivals & more!
+                        </p>
+                    </div>
+                </div>
+                <div className={"agreement"}>
+                    <Checkbox/>
+                    <div>
+                        By creating an account, you are agreeing to our <span><a
+                        href={"https://bookoutlet.com/privacy-policy"}>Privacy Policy</a></span> and
+                        our <span><a href={"https://bookoutlet.com/privacy-policy"}>Terms
                                 of Service</a></span> for the Book Outlet Rewards program.
-                        </div>
                     </div>
-                    <button onClick={() => {
-                        submit();
-                    }}>Submit
-                    </button>
-                    <div className={"or"}>
-                        <div></div>
-                        or
-                        <div></div>
+                </div>
+                <button onClick={() => {
+                    submit().then();
+                }}>Submit
+                </button>
+                <div className={"or"}>
+                    <div></div>
+                    or
+                    <div></div>
+                </div>
+                <div className={"oauths"}>
+                    <div className={"oauth google"}>
+                        <Google/> Google
                     </div>
-                    <div className={"oauths"}>
-                        <div className={"oauth google"}>
-                            <Google/> Google
-                        </div>
-                        <div className={"oauth facebook"}>
-                            <Facebook/>Facebook
-                        </div>
+                    <div className={"oauth facebook"}>
+                        <Facebook/>Facebook
                     </div>
-                </>
-            </div>
+                </div>
+            </>
         </div>
-    )
+    </div>)
 }
 const Google = () => (<svg
     xmlns="http://www.w3.org/2000/svg"
@@ -487,7 +514,6 @@ const styles = {
     }, formsLogin: {
         left: 0
     }
-
 }
 const Facebook = () => (<svg
     aria-hidden="true"

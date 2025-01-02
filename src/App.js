@@ -20,6 +20,7 @@ import SubPageWishLish from "./pages/user/SubPageWishList";
 import SubPageChangePassword from "./pages/user/SubPageChangePassword";
 import SubPageSessions from "./pages/user/SubPageSessions";
 import PageSearchResult from "./pages/PageSearchResult";
+import PageAuthCallback from "./pages/PageAuthCallback";
 // Incorrect for browser-based apps:
 
 
@@ -34,6 +35,7 @@ function App() {
                 <CartProvider>
                     <Router>
                         <Routes>
+                            <Route path="/auth/callback" element={<PageAuthCallback/>}/>
                             <Route path="/admin/extract-data" element={<PageExtractData/>}/>
                             <Route path="/admin/browse-all" element={<PageAdmin/>}/>
                             <Route path="/checkout" element={<PageCheckout/>}/>

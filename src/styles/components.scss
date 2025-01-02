@@ -57,6 +57,7 @@
     }
   }
 }
+
 .times {
   transform: scale(0);
   background-color: white;
@@ -90,6 +91,7 @@
     }
   }
 }
+
 .navbar {
   width: 100%;
   height: 50px;
@@ -334,7 +336,6 @@
           .searchbar {
             border-radius: 0;
             border: none;
-            border-bottom: 1px solid #868686;
           }
 
           .search-results {
@@ -343,6 +344,7 @@
 
           .search-results {
             max-height: 100vh;
+            border-top: 1px solid black;
           }
         }
       }
@@ -358,6 +360,9 @@
         font-size: 16px;
         transition: border-bottom-width 0.3s ease-out;
 
+        &:focus-within {
+          border-color: #007bff !important;
+        }
 
         input {
           height: 100%;
@@ -400,6 +405,10 @@
         max-height: 0;
         border: none;
 
+        .no-result {
+          width: 50%;
+        }
+
         .result-header {
           width: 100%;
           display: flex;
@@ -414,6 +423,7 @@
 
           a {
             color: #05052e;
+
             &:hover {
               color: #b52f2f;
             }
@@ -796,6 +806,7 @@
   overflow: hidden;
   height: max-content;
   z-index: 1;
+
   &.out-of-stock {
     cursor: not-allowed;
 
@@ -822,10 +833,12 @@
   transform: scale(0);
   transition-delay: 0.1s;
 }
+
 .address-input-wrapper {
   display: flex;
   align-items: center;
 }
+
 .address-input-wrapper input {
   width: 100%;
   border: 1.5px solid rgba(0, 0, 0, 0.33);
@@ -835,10 +848,31 @@
   box-sizing: border-box;
   outline: none;
 }
+.checkbox {
+  min-width: 18px;
+  max-width: 18px;
+  max-height: 18px;
+  aspect-ratio: 1;
+  border: 1.2px solid black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  color: white;
+  transition: background-color 0.3s ease;
+  padding: 2px;
+  font-weight: bolder;
+
+  &.checked {
+    background-color: black;
+  }
+}
+
 .no-caret {
   caret-color: transparent;
   cursor: pointer;
 }
+
 .address-input-wrapper input:focus + .address-input-placeholder,
 .address-input-wrapper input:not(:placeholder-shown) + .address-input-placeholder {
   top: 0;
@@ -874,6 +908,7 @@
 ::-webkit-scrollbar-thumb:hover {
   background-color: rgba(85, 85, 85, 0.50); /* Darker shade when hovered */
 }
+
 .address-input-wrapper .address-input-placeholder {
   position: absolute;
   top: 50%;
@@ -890,6 +925,7 @@
   background-color: white;
   padding: 0 2px;
 }
+
 .address-input-wrapper {
   position: relative;
   width: calc(50% - 10px);
@@ -1004,7 +1040,6 @@
   transition: box-shadow 0.3s ease, transform 0.3s ease;
   cursor: pointer;
   border-radius: 3px;
-  z-index: 500;
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -1012,8 +1047,7 @@
   background-color: white;
 
   &:hover {
-    box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.15);
-    transform: scale(1.01);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
   }
 
   .product-image {
@@ -1023,7 +1057,7 @@
     align-items: center;
     justify-content: flex-start;
     flex-direction: column;
-
+    border: 1px solid rgba(117, 114, 114, 0.21);
     img {
       width: 100%;
       aspect-ratio: 2 / 3;
@@ -1077,23 +1111,14 @@
       align-items: center;
       justify-content: space-between;
       flex-direction: row;
-      z-index: 501;
-      pointer-events: fill;
 
       button {
         height: 35px;
         border: 1.5px solid black;
         margin: 5px 0;
-        background-color: white;
-        transition: background-color 0.3s ease, color 0.3s ease;
         font-size: 14px;
         flex-grow: 1;
         cursor: pointer;
-
-        &:hover {
-          background-color: black;
-          color: white;
-        }
       }
 
       .wish {
@@ -1118,25 +1143,6 @@
   }
 }
 
-.checkbox {
-  min-width: 18px;
-  max-width: 18px;
-  max-height: 18px;
-  aspect-ratio: 1;
-  border: 1.2px solid black;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 2px;
-  color: white;
-  transition: background-color 0.3s ease;
-  padding: 2px;
-  font-weight: bolder;
-
-  &.checked {
-    background-color: black;
-  }
-}
 
 .featured-section {
   width: 100%;
@@ -1147,7 +1153,6 @@
   flex-direction: column;
   margin-top: 30px;
   padding: 20px 30px;
-
   .featured-section-header {
     width: 100%;
     background-color: white;
@@ -1163,7 +1168,7 @@
     width: 100%;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
 
     .to {
       border-radius: 50%;
@@ -1174,7 +1179,6 @@
       font-size: 40px;
       opacity: 0.5;
       transition: background-color 0.5s ease;
-
       &:hover {
         background-color: #eae9e9;
       }
@@ -1188,7 +1192,8 @@
     }
 
     .product-brief {
-      width: 15%;
+      width: 18%;
+      margin: 2%;
     }
   }
 }
@@ -1724,3 +1729,31 @@
   }
 
 }
+
+
+.ripple-button {
+  position: relative;
+  overflow: hidden;
+  transition: background 400ms;
+  background-color: #ffffff;
+  border: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.ripple-button span.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple 500ms linear;
+  background-color: #999999;
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+

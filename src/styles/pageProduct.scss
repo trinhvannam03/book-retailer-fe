@@ -163,21 +163,17 @@
           justify-content: space-between;
           flex-direction: row;
           cursor: pointer;
-
           button {
             height: 38px;
             border: 1.5px solid black;
             transition: transform 0.3s ease, color 0.3s ease;
             font-size: 14px;
             flex-grow: 1;
-            background-color: rgba(1, 1, 1, 0.86);
-            color: white;
             cursor: pointer;
             min-width: 200px;
             margin-right: 10px;
 
             &:hover {
-              transform: scale(1.02);
             }
 
             &:nth-child(2) {
@@ -197,7 +193,6 @@
             transition: transform 0.3s ease, color 0.3s ease;
 
             &:hover {
-              transform: scale(1.03);
             }
 
             svg {
@@ -209,13 +204,142 @@
       }
 
 
-      .stores {
-        .stores-header {
+      .stores-section {
+
+        h3 {
           width: 100%;
-          height: 50px;
-          background-color: rgba(0, 0, 0, 0.05);
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          margin: 0;
+          font-size: 25px;
+          font-family: Oswald, serif;
+          font-weight: normal;
+        }
+
+        .search-stores {
+          width: 100%;
+          height: 40px;
+          display: grid;
+          grid-template-columns: 50% 20% 1fr;
+          grid-template-rows: 100%;
+          margin: 10px 0;
+
+          input {
+            border: 1.5px solid #c6c4c4;
+            border-right: none;
+            padding: 0 10px;
+
+            &:focus {
+              outline: none;
+            }
+          }
+
+          button {
+            border: 0;
+            background-color: #b52f2f;
+            color: white;
+            cursor: pointer;
+          }
+
+          .nearest {
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            font-size: 13px;
+            height: 100%;
+            width: 100%;
+
+          }
+        }
+
+        .stores {
+          width: 100%;
+          display: flex;
+          align-items: flex-start;
+          justify-content: flex-start;
+          flex-direction: column;
+          overflow: auto;
+          max-height: 60vh;
+          padding: 5px;
+          border: 1px solid rgba(0, 0, 0, 0.15);
+
+
+          .store {
+            width: 100%;
+            border-top: 1.5px solid rgba(117, 114, 114, 0.29);
+            display: grid;
+            grid-template-columns: 80% 1fr;
+            grid-template-rows: max-content;
+            padding: 10px;
+            height: max-content;
+
+            &:nth-child(1) {
+              border: none;
+            }
+
+            .store-details {
+              display: flex;
+              align-items: flex-start;
+              justify-content: flex-start;
+              flex-direction: column;
+              height: max-content;
+
+              p {
+                margin: 3px 0;
+
+                &:nth-child(1) {
+                  font-size: 18px;
+                  font-family: Oswald, serif;
+
+                }
+
+                &:nth-child(2) {
+                  font-size: 13px;
+                  color: #3d3c3c;
+                }
+
+                &:nth-child(3) {
+                  font-size: 13px;
+                }
+
+                &:nth-child(4) {
+                  font-size: 14px;
+                  color: #154f68;
+                  display: flex;
+                  align-items: baseline;
+                  justify-content: flex-start;
+                  cursor: pointer;
+                  transition: color 500ms;
+
+                  &:hover {
+                    color: #56a3c7;
+                  }
+                }
+              }
+            }
+
+          }
+
+          .store-buttons {
+            button {
+              width: 100%;
+              height: 30px;
+              background-color: white;
+              border: 1.5px solid rgba(0, 0, 0, 0.50);
+              cursor: pointer;
+              font-size: 12px;
+              color: rgba(0, 0, 0, 0.50);
+              transition: border-color 200ms, color 200ms;
+              &:hover {
+                color: black;
+                border-color: black;
+              }
+            }
+          }
         }
       }
+
     }
 
     .categories-section {
